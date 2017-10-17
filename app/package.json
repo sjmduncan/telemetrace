@@ -1,0 +1,9 @@
+{
+    "name" : "telemetrace",
+    "productName" : "Telemetrace",
+    "version" : "0.2.0",
+    "main" : "app.js",
+    "devDependencies" : {
+      "electron" : "^1.16.11"
+    }
+}

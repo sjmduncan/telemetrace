@@ -1,0 +1,22 @@
+[
+    {
+	"Latitude": -43.530578,
+	"Longitude": 172.480927,
+	"minLength": 1.9,
+	"x": "Longitude",
+	"y": "Latitude",
+	"invy" : -1,
+	"invx" : -1,
+	"name": "Ruapuna"
+    },
+    {
+	"Latitude": -44.296486,
+	"Longitude": 171.202669,
+	"minLength": 1.2,
+	"x": "Latitude",
+	"y": "Longitude",
+	"invy" : 1,
+	"invx" : -1,
+	"name": "Levels"
+    }
+]
