@@ -10,8 +10,8 @@ function LapToText(lap){
     var begin=lap[0]
     var finish=lap[lap.length-1]
 
-    var lapTimeSec=(1*finish.Time-1*begin.Time)
-    var lapDate=new Date(1*begin.Utc)
+    var lapTimeSec=(finish.Time-begin.Time)
+    var lapDate=new Date(begin.Utc)
 
     var dateString
 	=(lapDate.getFullYear()-2000)+"-"

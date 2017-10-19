@@ -13,6 +13,7 @@ function ParseFile(rawText, fileExt){
 function TelemetraceParser(raw){
 	var dsv=d3.dsvFormat(',')
 
+	//FIXME: the LHS should be the default headers
     raw=raw.replace("KMH", "Speed")
     raw=raw.replace("Lat", "Latitude")
     raw=raw.replace("Lon", "Longitude")
@@ -159,66 +160,79 @@ function AutoSportLabsParser(raw){
 function CleanDiscontinuities(rawData){
     var offset=0;
     var i=0;
-    var lastD=1*rawData[0].Distance
+    var lastD=rawData[0].Distance
     for(i=0;i<rawData.length;i++){
-	var dif=1*rawData[i].Distance-lastD
+	var dif=rawData[i].Distance-lastD
 	if(dif<-0.01)
 	{
 	    offset=offset+lastD
 	}
 	lastD=rawData[i].Distance*1
-	rawData[i].Distance=1*rawData[i].Distance + offset
+	rawData[i].Distance=rawData[i].Distance + offset
     }
 }
-
+function newo(old){
+	return JSON.parse(JSON.stringify(old))
+}
 function splitLapsPerp(data, track, startLaps){
         function dist(pt){
-	return Math.abs(1*pt.Latitude-track.Latitude)
-	    +Math.abs(1*pt.Longitude - track.Longitude)
+	return Math.abs(pt.Latitude-track.Latitude)
+	    +Math.abs(pt.Longitude - track.Longitude)
     }
     function dot(p1, p2){
-	return p1[0]*p2[0]+p1[1]*p2[1]
+		return p1[0]*p2[0]+p1[1]*p2[1]
     }
     function vec(p, o){
-	return [p[0]-o[0],p[1]-o[1]]
+		return [p[0]-o[0],p[1]-o[1]]
     }
-    function newo(old){
-	return JSON.parse(JSON.stringify(old))
-    }
-    var i,thresh=0.00045,near=false
-    var numLaps=startLaps,intervalStart=1*data[0].Time,distanceStart=1*data[0].Distance
-    var laps={},lap=[],n=3,c=0,lastDot
-    for(i=0;i<data.length;i++){
-	var d=dist(data[i])
-	if(d<thresh && c > 200){
-	    // Vec from current pt to start-finish
-	    var v1 = vec([data[i].Latitude,data[i].Longitude],
-			 [track.Latitude,track.Longitude])
-	    // Vec along track 
-	    var v2 = vec([data[i].Latitude,data[i].Longitude],
-			 [data[i-n].Latitude,data[i-n].Longitude])
-	    // Proportional to cosine of angle between v1,v2. When this
-	    // is minimum then close to 90 deg, and the vehicle is on
-	    // the start/finish line
-	    var dotP = dot(v1, v2)
-	    
-	    if(dotP > lastDot){
-		    laps['lap'+numLaps]=(lap)
-		    numLaps++;
 
-		lap=[]
-		lap.push(newo(data[i-1]))
-		
-		intervalStart=1*data[i].Time
-		distanceStart=1*data[i].Distance
-		c=0
-	    }
-	    lastDot=dotP
+	function normL2(v){
+		return Math.sqrt(v[0]*v[0] + v[1]*v[1])
+	}
+    var i,thresh=0.00045,near=false
+    var numLaps=startLaps,intervalStart=data[0].Time,distanceStart=data[0].Distance
+    var laps={},lap=[],n=3,c=0,lastDot, lastv1
+    for(i=0;i<data.length;i++){
+		var d=dist(data[i])
+		if(d<thresh && c > 200){
+			// Vec from current pt to start-finish
+			var v1 = vec([data[i].Latitude,data[i].Longitude],
+				[track.Latitude,track.Longitude])
+
+			// Vec along track 
+			var v2 = vec([data[i].Latitude,data[i].Longitude],
+				[data[i-n].Latitude,data[i-n].Longitude])
+
+			// The dot product is minimized either when v1 is normal to v2
+			// and/or when the vector magnitudes are minimized.
+			// At the start-finish line both of these things should be true
+			var dotP = dot(v1, v2)
+			
+			// This means that the current point has gone past the start-finish line
+			// and the previous point is behind it. This is the end of the lap and the start
+			// of the next one
+			if(dotP > lastDot){
+
+				var ratio=normL2(v1)/normL2(lastv1)
+				interpoint=bisectSamplesLinear(data[i-1], data[i], ratio)
+				lap.push(interpoint);
+				laps['lap'+numLaps]=(lap)
+				numLaps++;
+
+				lap=[]
+				lap.push(newo(interpoint))
+			
+				intervalStart=data[i].Time
+				distanceStart=data[i].Distance
+				c=0
+			}
+			lastv1=v1
+			lastDot=dotP
 	}
 	c++
 
 	// FIXME: Why does this break everything?
-	// data[i].Distance=1*data[i].Distance-1*distanceStart
+	// data[i].Distance=data[i].Distance-distanceStart
 	lap.push(data[i])
     }
 
@@ -230,6 +244,17 @@ function splitLapsPerp(data, track, startLaps){
 	laps['lap'+numLaps] = lap
     //}
     return laps        
+}
+
+// Create a new point with linear interpolation between the two provided.
+function bisectSamplesLinear(s1, s2, ratio){
+	var ipt=newo(s1)
+	for(var key in s1){
+	    if(s1.hasOwnProperty(key)){
+			ipt[key]=ratio*s2[key]+(1-ratio)*s1[key]
+	    }
+	}
+	return ipt
 }
 
 function getNearestLatLon(ref, comp, iref){

@@ -1,7 +1,7 @@
 function getNearestTrack(pt, oldTrack){
     function dist(track, la, lo){
-	return Math.abs(1*track.Latitude-la)
-	    +Math.abs(1*track.Longitude-lo)
+	return Math.abs(track.Latitude-la)
+	    +Math.abs(track.Longitude-lo)
     }
     var tracks=JSON.parse(fs.readFileSync('tracks.json', 'utf-8'))
     var mind=dist(tracks[0], pt.Latitude, pt.Longitude)

@@ -24,8 +24,8 @@ a CSV format which is compatible with the data analysis app.
  - [ ] Enable/disable/rename analog channels
  - [ ] Calibrate analog sensor ranges (for TPS & brakes)
  - [ ] Calibrate RPM pulses per rotation
-- [ ] Touch[ ]screen UI
-- [ ] Web[ ]app UI
+- [ ] Touchscreen UI
+- [ ] Webapp UI
 - [ ] Run pi wireless in hotspot mode
 
 ### Wish List
