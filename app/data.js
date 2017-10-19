@@ -19,12 +19,11 @@ function TelemetraceParser(raw){
     raw=raw.replace("Lon", "Longitude")
     raw=raw.replace("a1", "BrakePress")
     raw=raw.replace("a2", "TPS")
-    raw=raw.replace("Seconds","Time")
     function makeDist(data, i){
 	if(i==0){
 	    return 0
 	}
-	var dt=(data[i].Time-data[i-1].Time) // in seconds
+	var dt=(data[i].Seconds-data[i-1].Seconds) // in seconds
 	var v =0.2777778*(data[i].Speed+data[i-1].Speed)/2 // in meters/sec
 
 	return data[i-1].Distance + dt * v
@@ -59,7 +58,7 @@ function RaceLogicParser(raw){
     // Rename some of the columns to make the JSON keys consistent with RaceCapture
     
     hdr=hdr.replace('velocity', 'Speed')
-	hdr=hdr.replace('time', 'Interval')
+	hdr=hdr.replace('time', 'Seconds')
 
 
 	// Mangle the header+data together and parse it!
@@ -76,18 +75,18 @@ function RaceLogicParser(raw){
     // that and doesn't seem to introduce errors
     var tOffset=0
     function TimeTravel(data, i){
-		var dt = data[i].Interval - data[i-1].Interval - tOffset
+		var dt = data[i].Seconds - data[i-1].Seconds - tOffset
 		if(dt > 0.15)
 		{
 			tOffset += dt - 0.1
 		}
-		return data[i].Interval - tOffset
+		return data[i].Seconds - tOffset
     }
 
     // There is no distance data, so we gotta ham it up by using speed
     // and time. FIXME: Use GPS coords instead
     function makeDist(data, i){
-		var dt=(data[i].Interval-data[i-1].Interval) // in seconds
+		var dt=(data[i].Seconds-data[i-1].Seconds) // in seconds
 		var v =0.2777778*(data[i].Speed+data[i-1].Speed)/2 // in meters/sec
 		if(dt == 0)
 			return data[i-1].Distance
@@ -102,8 +101,8 @@ function RaceLogicParser(raw){
 		d.Longitude = -d['long']/60 // Also longitude is flipped
 
 		if(di > 0)
-			d.Interval = TimeTravel(data, di)
-		d.Utc = d.Interval*1000
+			d.Seconds = TimeTravel(data, di)
+		d.Utc = d.Seconds*1000
 		d.BrakePress=0
 
 
@@ -131,6 +130,7 @@ function AutoSportLabsParser(raw){
     ha.forEach(function(he){
 		header+=he.substr(0, he.indexOf('|')) + ',' })
 	header=header.replace(' ', '')
+	header=header.replace('Interval', 'Seconds')
     var clean=header+raw.substring(raw.indexOf('\n'))
 
     // Parse the data, remove the first row because it's pretty much always just a bunch
@@ -149,7 +149,7 @@ function AutoSportLabsParser(raw){
     FakeUpsample(data, ['TPS', 'BrakePress', 'RPM'])
     ScaleSeries(data, 'RPM', 1/1000) // RPM to kRPM
     ScaleSeries(data, 'Speed', 1.609344) // MPH to KMH
-    ScaleSeries(data, 'Interval', 1/1000) // Miliseconds to seconds
+    ScaleSeries(data, 'Seconds', 1/1000) // Miliseconds to seconds
     ScaleSeries(data, 'Distance', (1000/1.609344)) // Miles to meters
     //SmoothDistance(data)
     return data
@@ -190,7 +190,7 @@ function splitLapsPerp(data, track, startLaps){
 		return Math.sqrt(v[0]*v[0] + v[1]*v[1])
 	}
     var i,thresh=0.00045,near=false
-    var numLaps=startLaps,intervalStart=data[0].Time,distanceStart=data[0].Distance
+    var numLaps=startLaps,SecondsStart=data[0].Seconds,distanceStart=data[0].Distance
     var laps={},lap=[],n=3,c=0,lastDot, lastv1
     for(i=0;i<data.length;i++){
 		var d=dist(data[i])
@@ -222,7 +222,7 @@ function splitLapsPerp(data, track, startLaps){
 				lap=[]
 				lap.push(newo(interpoint))
 			
-				intervalStart=data[i].Time
+				SecondsStart=data[i].Seconds
 				distanceStart=data[i].Distance
 				c=0
 			}
@@ -437,9 +437,9 @@ function Numberify(data){
 function MangleLapTime(lap){
     var t0=lap[0]['Utc']
     if(t0 == undefined)
-	t0=lap[0]['Time']
+	t0=lap[0]['Seconds']
     for(var i=0; i<lap.length; i++){
-	lap[i]['Time'] = (lap[i]['Time']-t0)
+	lap[i]['Seconds'] = (lap[i]['Seconds']-t0)
     }
 }
 

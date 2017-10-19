@@ -109,18 +109,18 @@ function UpdateTips(){
 	    d3.select('.tipitem#trace'+tind)
 		.text(
 		    laps[f][i].Speed.toFixed(1) + 'km/h | ' +
-			Math.floor(laps[f][i].Time/60) + ':' +
-			(laps[f][i].Time%60).toFixed(3) + " | " +
+			Math.floor(laps[f][i].Seconds/60) + ':' +
+			(laps[f][i].Seconds%60).toFixed(3) + " | " +
 			(laps[f][i].Distance).toFixed(1) + "m"
 		)
 	    rSpeed=laps[f][i].Speed
-	    rTime=laps[f][i].Time
+	    rTime=laps[f][i].Seconds
 	}else{
 	    var tstr=''
 	    if(rSpeed != undefined){
 		var i= GetIndDistPercent(f, xp)
 		var lSpeed=laps[f][i].Speed-rSpeed
-		var lTime=laps[f][i].Time-rTime
+		var lTime=laps[f][i].Seconds-rTime
 		tstr=SignedFixed(lSpeed,1) + 'km/h | ' + 
 		    SignedFixed(lTime,3)  +'s'
 		

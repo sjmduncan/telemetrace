@@ -30,18 +30,18 @@ function MakeToggles(){
 	'Key':'Speed',
 	'Title':'Speed'
     },{
-	'Key':'Time',
+	'Key':'Seconds',
 	'Title':'Time'
-//    },{
-//	'Key':'BrakePress',
-//	'Title':'Brake'
+    },{
+	'Key':'BrakePress',
+	'Title':'Brake'
     },{
 	
 	'Key':'BrakePressTPS',
 	'Title':'Brake/TPS'
-//    },{
-//	'Key':'TPS',
-//	'Title':'TPS'
+    },{
+	'Key':'TPS',
+	'Title':'TPS'
     },{
 	'Key':'RPM',
 	'Title':'RPM'

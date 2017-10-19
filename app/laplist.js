@@ -10,7 +10,7 @@ function LapToText(lap){
     var begin=lap[0]
     var finish=lap[lap.length-1]
 
-    var lapTimeSec=(finish.Time-begin.Time)
+    var lapTimeSec=(finish.Seconds-begin.Seconds)
     var lapDate=new Date(begin.Utc)
 
     var dateString

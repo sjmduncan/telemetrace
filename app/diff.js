@@ -20,7 +20,7 @@ function MakeDiffer(numActive, trace,getSelectedToggle){
 	traces.forEach(function(t){
 	    if(t != null){
 		var k=key
-		if(key == 'Time' || key == 'Speed' || key == 'Interval'){
+		if(key == 'Speed' || key == 'Seconds'){
 		    lapDiffGeo(laps[traces[0]],
 			       laps[t],
 			       key)
