@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import time
+import math
 import datetime
 import serial
 import signal # For Ctrl+C to exit
@@ -21,7 +22,17 @@ signal.signal(signal.SIGINT, signal_handler)
 
 rpm_pps=2
 
+minlogkmh=7
 minlogkmh=-1
+
+achans={
+    'a1':'TPS',
+    'a2':'BrakePress',
+    'a2':'BrakePress',
+    'a3':'a3',
+    'a4':'a4',
+    'a5':'a5'
+    }
 
 utctz=pytz.timezone('UTC')
 
@@ -38,12 +49,22 @@ def ParseLine(l):
     day=int(words[8][:2])
     month=int(words[8][2:4])
     year=int(words[8][4:6])+2000
+
+    # GPS only reports time in UTC, convert it to localtime for the filename.
     line['utcdt'] = utctz.localize(datetime.datetime(year,month,day,hours,minutes,seconds,microseconds))
     line['localdt'] = line['utcdt'].astimezone(timezone)
+
     line['fix']=fix
     if(fix):
-        line['lat']=-float(words[2])/100
-        line['lon']=float(words[4])/100
+        # Convert NMEA [Deg][Minues-decimal] to [Deg-decimal]
+        line['lat']=float(words[2][:2]) + float(words[2][2:])/60
+        line['lon']=float(words[4][:3]) + float(words[4][3:])/60
+        if(words[3] == "S"):
+            line['lat'] = -line['lat']
+        if(words[5] == "E"):
+            line['lon'] = -line['lon']
+
+        # Convert knots to kmh
         line['kmh']=float(words[6])*1.852001
     else:
         line['lat']=0
@@ -66,7 +87,12 @@ def ParseLine(l):
         return line;
 
     # RPM is received as the time between pulses in microseconds
-    line['rpm'] = 60*1000000/float(words[13])/rpm_pps
+    rpm_pulse=float(words[13])
+    if(rpm_pulse > 0):
+        # rpm_pps is to correct for bad Arduino clock rate
+        line['rpm'] = 60*1000000/rpm_pulse/rpm_pps
+    else:
+        line['rpm'] = 0
     return line
 
 
@@ -121,14 +147,21 @@ def ReadLoop():
     modu=0
     tstart=''
     while True:
+        data={}
+        data['fix'] = False
+        data['kmh']=-1
         try:
             l=usart.readline().decode('utf-8')
             data=ParseLine(l)
             newdata=True
+
+            if(not data['fix']):
+                print("no GPS Fix")
+                
         except Exception as e:
-            print("Failed to make new file")
+            print("Failed to parse line")
             print(e)
-            time.sleep(1)
+
         
         if(newdata and data['fix'] and not logging and data['kmh'] >= minlogkmh):
             try:
@@ -149,7 +182,7 @@ def ReadLoop():
                 if modu == 0:
                     file.flush();
             except Exception as e:
-                print("failed to parse line");
+                print("failed to log to file");
                 print(e)
 
         if(newdata and data['fix'] and logging and data['kmh'] <= minlogkmh*0.8):
